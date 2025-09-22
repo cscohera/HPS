@@ -1,16 +1,13 @@
 #check to see if microsoft fixed hash mismatch issue
 Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Force
 
-if (Get-Command winget -ErrorAction SilentlyContinue) {
-    Write-Host "winget is installed"
+if (Get-Command choco -ErrorAction SilentlyContinue) {
+    Write-Host "choco is installed"
 } else {
-
-    
-    Write-Host "winget is not installed"
-    $progressPreference = 'silentlyContinue'
-    & "$PSScriptRoot\winget-install.ps1"
+    Write-Host "Choco not installed"
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 }
 
-winget install "Microsoft.Sysinternals.Suite" --accept-source-agreements --accept-package-agreements
+choco install sysinternals -y
+choco install python3
 
-winget list "Microsoft.Sysinternals.Suite"
