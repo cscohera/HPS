@@ -9,5 +9,5 @@ if (Get-Command choco -ErrorAction SilentlyContinue) {
 }
 
 choco install sysinternals -y
-choco install python3
+choco install python3 -y
 
