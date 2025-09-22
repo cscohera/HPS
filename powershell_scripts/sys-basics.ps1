@@ -1,18 +1,16 @@
-
+#check to see if microsoft fixed hash mismatch issue
 Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Force
 
 if (Get-Command winget -ErrorAction SilentlyContinue) {
     Write-Host "winget is installed"
 } else {
+
+    
     Write-Host "winget is not installed"
     $progressPreference = 'silentlyContinue'
-    $latestWingetMsixBundleUri = $( Invoke-RestMethod https://api.github.com/repos/microsoft/winget-cli/releases/latest ).assets.browser_download_url | Where-Object { $_.EndsWith( ".msixbundle" ) }
-    $latestWingetMsixBundle = $latestWingetMsixBundleUri.Split("/")[-1]
-    Write-Information "Downloading winget to artifacts directory..."
-    Invoke-WebRequest -Uri $latestWingetMsixBundleUri -OutFile "./$latestWingetMsixBundle" 
-    Add-AppxPackage $latestWingetMsixBundle
+    & "$PSScriptRoot\winget-install.ps1"
 }
 
-winget install "Sysinternals Suite" --accept-source-agreements --accept-package-agreements
+winget install "Microsoft.Sysinternals.Suite" --accept-source-agreements --accept-package-agreements
 
-winget list "Sysinternals Suite"
+winget list "Microsoft.Sysinternals.Suite"
