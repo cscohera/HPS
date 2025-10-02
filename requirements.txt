@@ -1,0 +1,7 @@
+watchdog
+psutil
+wmi
+pywin32
+scapy
+pyshark
+pypiwin32

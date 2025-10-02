@@ -9,11 +9,11 @@ if (Get-Command choco -ErrorAction SilentlyContinue) {
 }
 
 #maybe bluespawn or commodo kill switch
-Set-SmbServerConfiguration -EnableSMB1Protocol -Confirm:$false
+# Set-SmbServerConfiguration -EnableSMB1Protocol -Confirm:$false
 
 Invoke-WebRequest -Uri https://github.com/ION28/BLUESPAWN/releases/download/v0.5.1-alpha/BLUESPAWN-client-x64.exe -OutFile "C:\Blue\BLUESPAWN-client-x64.exe"
 # NEED TO INSTALL GIT choco install git.install -y
 choco install sysinternals -y --params "/InstallDir:C:\SSD\"
 choco install python3 -y
 choco install everything -y --params "/start-menu-shortcuts /run-on-system-startup" 
-#install watchdog
+pip install -r requirements.txt
