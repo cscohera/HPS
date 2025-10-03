@@ -10,7 +10,7 @@ if (Get-Command choco -ErrorAction SilentlyContinue) {
 
 #maybe bluespawn or commodo kill switch
 # Set-SmbServerConfiguration -EnableSMB1Protocol -Confirm:$false
-New-Item -Path "C:\Blue" -ItemType Directory
+New-Item -Path "C:\Blue" -ItemType Directory -Force 
 
 Invoke-WebRequest -Uri https://github.com/ION28/BLUESPAWN/releases/download/v0.5.1-alpha/BLUESPAWN-client-x64.exe -OutFile "C:\Blue\BLUESPAWN-client-x64.exe"
 # NEED TO INSTALL GIT choco install git.install -y

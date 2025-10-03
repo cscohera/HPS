@@ -19,20 +19,19 @@ choco install sysinternals -y --params "/InstallDir:C:\SSD\"
 choco install python3 -y
 choco install everything -y --params "/start-menu-shortcuts /run-on-system-startup"
 
-# Refresh environment to make sure pip is available
+
 $env:Path += ";$($env:LocalAppData)\Programs\Python\Python3X\Scripts;$($env:LocalAppData)\Programs\Python\Python3X"
 refreshenv
 
-# If requirements.txt exists in current directory, install packages
+
 if (Test-Path .\requirements.txt) {
     pip install -r .\requirements.txt
 }
 
-# Download BlueSpawn client
 New-Item -Path "C:\Blue" -ItemType Directory -Force
 Invoke-WebRequest -Uri "https://github.com/ION28/BLUESPAWN/releases/download/v0.5.1-alpha/BLUESPAWN-client-x64.exe" -OutFile "C:\Blue\BLUESPAWN-client-x64.exe"
 
-# Install HardeningKitty
+
 Function InstallHardeningKitty() {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     $ProgressPreference = 'SilentlyContinue'
