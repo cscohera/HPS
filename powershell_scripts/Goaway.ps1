@@ -24,8 +24,6 @@ Ensure-Dir $outDir
 
 # helper for writing JSON/CSV/HTML
 function Write-ReportFiles($name, $objects) {
-    $csv = Join-Path $outDir ("$name.csv")
-    $json = Join-Path $outDir ("$name.json")
     $html = Join-Path $outDir ("$name.html")
     $objects | Export-Csv -Path $csv -NoTypeInformation -Force
     $objects | ConvertTo-Json -Depth 5 | Out-File -FilePath $json -Encoding utf8
@@ -149,52 +147,6 @@ $svcRegDump = Join-Path $outDir "ServicesRegistry.txt"
 reg export "HKLM\SYSTEM\CurrentControlSet\Services" $svcRegDump /y | Out-Null
 Write-Host "Exported Services registry to $svcRegDump (large file)"
 
-# 11) MySQL specific checks (users, remote access, mysql service binary path)
-if ($IncludeMySQL) {
-    Write-Host "MySQL checks: looking for mysql/mysqld service and checking config/users if mysql client present..."
-    $mysqService = Get-Service -Name *mysql* -ErrorAction SilentlyContinue | Select-Object Name,DisplayName,Status
-    $mysqlInfo = [PSCustomObject]@{ Service = $mysqService; FoundConfig = $false; Users = @() }
-    # try to find my.ini/my.cnf files
-    $possibleConf = @("C:\ProgramData\MySQL\MySQL Server*\my.ini","C:\Program Files\MySQL\*my.ini","C:\Program Files\mysqld\my.ini") -join ','
-    $confFiles = Get-ChildItem -Path C:\ -Include my.ini,my.cnf -Recurse -ErrorAction SilentlyContinue | Select-Object FullName,LastWriteTime -First 10
-    $mysqlInfo.FoundConfig = $confFiles
-    # If 'mysql' CLI exists, try to list users (requires providing credentials - we won't assume)
-    $mysqlCLI = Get-Command mysql -ErrorAction SilentlyContinue
-    if ($mysqlCLI) {
-        $mysqlInfo.Comment = "mysql CLI found. You can run: mysql -u root -p -e \"SELECT user,host,authentication_string,plugin FROM mysql.user;\""
-    } else {
-        $mysqlInfo.Comment = "mysql client not found on PATH. To enumerate DB users, run mysql client with root credentials."
-    }
-    $mysqlInfo | ConvertTo-Json | Out-File (Join-Path $outDir "MySQL_Check.json")
-}
 
-# 12) FTP checks - IIS FTP or third-party
-if ($IncludeFTP) {
-    Write-Host "FTP checks..."
-    # IIS FTP is part of Web-Administration module
-    try {
-        Import-Module WebAdministration -ErrorAction Stop
-        $ftpsites = Get-WebConfiguration "//system.applicationHost/sites/site" -ErrorAction SilentlyContinue | Where-Object { $_.bindings -match "ftp" }
-        $ftpBindings = @()
-        foreach ($s in $ftpsites) {
-            $ftpBindings += [PSCustomObject]@{ Name = $s.name; Bindings = $s.bindings }
-        }
-        Write-ReportFiles -name "IIS_FTP_Sites" -objects $ftpBindings
-    } catch {
-        Write-Host "IIS WebAdministration not available or no FTP sites."
-    }
-    # Look for common FTP service processes e.g. FileZilla, vsftpd not on Windows; look for ftpsvc service (Microsoft FTP service)
-    $ftpSvc = Get-Service -Name ftpsvc -ErrorAction SilentlyContinue
-    $ftpSvc | ConvertTo-Json | Out-File (Join-Path $outDir "FTP_Service.json")
-}
-
-# 13) Scheduled persistence in SQL Server Agent jobs (if SQL Server present) - minimal check
-try {
-    $sqlsvc = Get-Service -Name MSSQL* -ErrorAction SilentlyContinue
-    if ($sqlsvc) {
-        $sqlsvc | ConvertTo-Json | Out-File (Join-Path $outDir "MSSQL_Service.json")
-        Write-Host "SQL Server detected. Inspect SQL Agent jobs manually for suspicious T-SQL creating persistence."
-    }
-} catch {}
 
 Write-Host "Discovery complete. Reports in $outDir" -ForegroundColor Green
