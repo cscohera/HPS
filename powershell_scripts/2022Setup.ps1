@@ -17,6 +17,7 @@ Invoke-WebRequest -Uri https://github.com/ION28/BLUESPAWN/releases/download/v0.5
 choco install sysinternals -y --params "/InstallDir:C:\SSD\"
 choco install python3 -y
 choco install everything -y --params "/start-menu-shortcuts /run-on-system-startup" 
+choco install systeminformer -y "/InstallDir:C:\SSD\"
 pip install -r requirements.txt
 
 Function InstallHardeningKitty() {

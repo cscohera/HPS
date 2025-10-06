@@ -6,7 +6,7 @@ from watchdog.events import FileSystemEventHandler
 
 class OnMyWatch:
     # Set the directory on watch
-    watchDirectory = R"C:\\"
+    watchDirectory = R"C:\\Users\\"
 
     def __init__(self):
         self.observer = Observer()

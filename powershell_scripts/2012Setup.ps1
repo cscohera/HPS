@@ -18,6 +18,7 @@ choco install git.install -y
 choco install sysinternals -y --params "/InstallDir:C:\SSD\"
 choco install python3 -y
 choco install everything -y --params "/start-menu-shortcuts /run-on-system-startup"
+choco install systeminformer -y "/InstallDir:C:\SSD\"
 
 
 $env:Path += ";$($env:LocalAppData)\Programs\Python\Python3X\Scripts;$($env:LocalAppData)\Programs\Python\Python3X"
