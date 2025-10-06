@@ -1,17 +1,8 @@
-<#
-.SYNOPSIS
-    Discover common persistence mechanisms on a Windows Server.
 
-.NOTES
-    - Run as Administrator.
-    - Outputs CSV, JSON and HTML report files in C:\PersistenceReports\<timestamp>
-    - Safe (read-only). Use Remove-Persistence.ps1 to remove items.
-
-#>
 
 [CmdletBinding()]
 param(
-    [string]$OutRoot = "C:\PersistenceReports",
+    [string]$OutRoot = "C:\HelloReport",
     [switch]$IncludeMySQL = $true,
     [switch]$IncludeFTP = $true
 )
@@ -22,13 +13,11 @@ $ts = (Get-Date).ToString("yyyyMMdd_HHmmss")
 $outDir = Join-Path $OutRoot $ts
 Ensure-Dir $outDir
 
-# helper for writing JSON/CSV/HTML
+# helper for writing HTML
 function Write-ReportFiles($name, $objects) {
     $html = Join-Path $outDir ("$name.html")
-    $objects | Export-Csv -Path $csv -NoTypeInformation -Force
-    $objects | ConvertTo-Json -Depth 5 | Out-File -FilePath $json -Encoding utf8
     $objects | ConvertTo-Html -Title $name -PreContent "<h2>$name</h2><p>Generated $ts</p>" | Out-File -FilePath $html -Encoding utf8
-    Write-Host "Wrote: $csv, $json, $html"
+    Write-Host "Wrote: $html"
 }
 
 Write-Host "Discovery start: $ts" -ForegroundColor Cyan
