@@ -2,7 +2,6 @@
 Write-Host "Starting hardening against persistence..." -ForegroundColor Cyan
 
 
-
 # =============== BLOCK STARTUP FOLDER EXECUTION ===============
 # Requires Software Restriction Policies or AppLocker
 # Note: SRP Example
@@ -81,4 +80,4 @@ foreach ($ver in $officeVersions) {
     Write-Host "Restricted macros for Office version $ver"
 }
 
-Write-Host "`n✅ Hardening complete. Some changes may require restart or GPO refresh." -ForegroundColor Green
+Write-Host "Hardening complete. Some changes may require restart or GPO refresh." -ForegroundColor Green

@@ -13,6 +13,14 @@ if (Get-Command choco -ErrorAction SilentlyContinue) {
     refreshenv
 }
 
+# Disable SMBv1 server component
+Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force
+
+# Disable SMBv1 client component
+Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters" -Name "SMB1" -Value 0 -Force
+
+Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Control\Lsa -Name LmCompatibilityLevel -Value 5
+
 
 choco install git.install -y
 choco install sysinternals -y --params "/InstallDir:C:\SSD\"

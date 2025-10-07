@@ -2,7 +2,6 @@
 Write-Host "Starting hardening against persistence..." -ForegroundColor Cyan
 
 
-
 # =============== BLOCK STARTUP FOLDER EXECUTION ===============
 # Requires Software Restriction Policies or AppLocker
 # Note: SRP Example
