@@ -18,18 +18,18 @@ Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Control\Lsa -Name LmCompat
 
 
 choco install 7zip -y --params "/InstallDir:C:\SSD\"
-$installer = "C:\Temp\Snort_2_9_20_Installer.x64.exe"
-Invoke-WebRequest -Uri https://snort.org/downloads/snort/Snort_2_9_20_Installer.x64.exe -OutFile $installer
-Start-Process -FilePath $installer -ArgumentList "/S" -Wait
+#$installer = "C:\Temp\Snort_2_9_20_Installer.x64.exe"
+#Invoke-WebRequest -Uri https://snort.org/downloads/snort/Snort_2_9_20_Installer.x64.exe -OutFile $installer
+#Start-Process -FilePath $installer -ArgumentList "/S" -Wait
 
-$installer2 = "C:\Temp\npcap-1.84.exe"
-Invoke-WebRequest -Uri https://npcap.com/dist/npcap-1.84.exe -OutFile $installer2
-Start-Process -FilePath $installer2 -ArgumentList "/S" -Wait
+#$installer2 = "C:\Temp\npcap-1.84.exe"
+#Invoke-WebRequest -Uri https://npcap.com/dist/npcap-1.84.exe -OutFile $installer2
+#Start-Process -FilePath $installer2 -ArgumentList "/S" -Wait
 
 Invoke-WebRequest -Uri https://raw.githubusercontent.com/thereisnotime/Snort-Default-Windows-Configuration/master/snort.conf -OutFile "C:\"
 
 # Path to existing Snort config
-$snortConfPath     = "C:\Snort\etc\snort.conf"
+$snortConfPath = "C:\Snort\etc\snort.conf"
 
 # Path to your custom config file
 $customConfSource  = "C:\snort.conf"
