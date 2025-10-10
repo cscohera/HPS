@@ -2,6 +2,8 @@
 Write-Host "Starting hardening against persistence..." -ForegroundColor Cyan
 
 
+net accounts /minpwlen:12 /maxpwage:60 /lockoutthreshold:5 /lockoutduration:30 /lockoutwindow:30 | Out-Null
+
 # =============== BLOCK STARTUP FOLDER EXECUTION ===============
 # Requires Software Restriction Policies or AppLocker
 # Note: SRP Example
@@ -39,7 +41,7 @@ Write-Host "Disabled Windows Script Host"
 Disable-WindowsOptionalFeature -Online -FeatureName "MicrosoftWindowsPowerShellV2Root" -NoRestart
 
 # =============== SET POWERSHELL EXECUTION POLICY ===============
-Set-ExecutionPolicy -ExecutionPolicy AllSigned -Scope LocalMachine -Force
+Set-ExecutionPolicy -ExecutionPolicy AllSigned -Scope Users -Force
 Write-Host "Set PowerShell execution policy to AllSigned"
 
 # =============== ENABLE AUDIT POLICIES FOR PERSISTENCE ===============
