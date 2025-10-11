@@ -1,6 +1,89 @@
 
+# =============== BASIC INFO ===============
+Write-Host "Starting hardening against persistence..." -ForegroundColor Cyan
 
-#see if these could break things
+secedit /export /cfg C:\temp\localsec_before.inf
+reg export "HKLM\SYSTEM\CurrentControlSet\Control\Lsa" C:\temp\lsa_before.reg /y
+reg export "HKLM\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters" C:\temp\srv_before.reg /y
+
+net accounts /minpwlen:12 /maxpwage:60 /lockoutthreshold:5 /lockoutduration:30 /lockoutwindow:30 | Out-Null
+
+# =============== BLOCK STARTUP FOLDER EXECUTION ===============
+# Requires Software Restriction Policies or AppLocker
+# Note: SRP Example
+$srpPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers"
+New-Item -Path $srpPath -Force | Out-Null
+Set-ItemProperty -Path $srpPath -Name "Levels" -Value 262144
+Set-ItemProperty -Path $srpPath -Name "PolicyScope" -Value 0
+Set-ItemProperty -Path $srpPath -Name "TransparentEnabled" -Value 1
+Set-ItemProperty -Path $srpPath -Name "AuthenticodeEnabled" -Value 1
+Set-ItemProperty -Path $srpPath -Name "DefaultLevel" -Value 0x40000
+
+# Disallow %APPDATA% and %TEMP% execution
+$disallowedPaths = @(
+    "%AppData%\*",
+    "%LocalAppData%\Temp\*",
+    "%UserProfile%\Downloads\*"
+)
+
+$ruleID = 262144
+foreach ($path in $disallowedPaths) {
+    $subkey = "$srpPath\0\Paths\$ruleID"
+    New-Item -Path $subkey -Force | Out-Null
+    New-ItemProperty -Path $subkey -Name "ItemData" -Value $path -PropertyType String -Force
+    New-ItemProperty -Path $subkey -Name "SaferFlags" -Value 0 -PropertyType DWord -Force
+    $ruleID++
+    Write-Host "Blocked execution from: $path"
+}
+
+# =============== DISABLE WINDOWS SCRIPT HOST ===============
+Set-ItemProperty -Path "HKLM:\Software\Microsoft\Windows Script Host\Settings" -Name "Enabled" -Value 0 -Force
+Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows Script Host\Settings" -Name "Enabled" -Value 0 -Force
+Write-Host "Disabled Windows Script Host"
+
+
+
+# =============== ENABLE AUDIT POLICIES FOR PERSISTENCE ===============
+auditpol /set /subcategory:"Process Creation" /success:enable /failure:enable
+auditpol /set /subcategory:"Scheduled Task Creation" /success:enable /failure:enable
+auditpol /set /subcategory:"Logon" /success:enable /failure:enable
+auditpol /set /subcategory:"Other Object Access Events" /success:enable /failure:enable
+Write-Host "Enabled key audit policies"
+
+# =============== CONFIGURE DEFENDER ASR RULES ===============
+# Ensure Defender is installed and running
+$asrRules = @(
+    
+    "56A863A9-875E-4185-98A7-B882C64B5CE5" = "Block abuse of exploited vulnerable signed drivers";
+    "7674BA52-37EB-4A4F-A9A1-F0F9A1619A2C" = "Block Adobe Reader from creating child processes";
+    "D4F940AB-401B-4EFC-AADC-AD5F3C50688A" = "Block all Office applications from creating child processes";
+    "9E6C4E1F-7D60-472F-BA1A-A39EF669E4B2" = "Block credential stealing from the Windows local security authority subsystem (lsass.exe)";
+    "BE9BA2D9-53EA-4CDC-84E5-9B1EEEE46550" = "Block executable content from email client and webmail";
+    "D3E037E1-3EB8-44C8-A917-57927947596D" = "Block JavaScript or VBScript from launching downloaded executable content";
+    "3B576869-A4EC-4529-8536-B80A7769E899" = "Block Office applications from creating executable content";
+    "75668C1F-73B5-4CF0-BB93-3ECF5CB7CC84" = "Block Office applications from injecting code into other processes";
+    "26190899-1602-49E8-8B27-EB1D0A1CE869" = "Block Office communication application from creating child processes";
+    "E6DB77E5-3DF2-4CF1-B95A-636979351E5B" = "Block persistence through WMI event subscription";
+    "D1E49AAC-8F56-4280-B9BA-993A6D77406C" = "Block process creations originating from PSExec and WMI commands";
+    "92E97FA1-2EDF-4476-BDD6-9DD0B4DDDC7B" = "Block Win32 API calls from Office macros";
+    "C1DB55AB-C21A-4637-BB3F-A12568109D35" = "Use advanced protection against ransomware";
+    "A8F5898E-1DC8-49A9-9878-85004B8A61E6" = "Block Webshell creation for Servers";
+)
+
+foreach ($rule in $asrRules) {
+    Add-MpPreference -AttackSurfaceReductionRules_Ids $rule -AttackSurfaceReductionRules_Actions Enabled
+    Write-Host "Enabled Defender ASR rule: $rule"
+}
+
+# =============== DISABLE MACROS IN OFFICE (REGISTRY) ===============
+$officeVersions = @("16.0", "15.0", "14.0") # Office 2016, 2013, 2010
+foreach ($ver in $officeVersions) {
+    $macroPath = "HKCU:\Software\Microsoft\Office\$ver\Word\Security"
+    New-Item -Path $macroPath -Force | Out-Null
+    Set-ItemProperty -Path $macroPath -Name "VBAWarnings" -Value 4  # 4 = Disable all macros with notification
+    Write-Host "Restricted macros for Office version $ver"
+}
+
 
 ftype htafile="%SystemRoot%\system32\NOTEPAD.EXE" "%1"
 ftype wshfile="%SystemRoot%\system32\NOTEPAD.EXE" "%1"
@@ -15,9 +98,6 @@ ftype vbsfile="%SystemRoot%\system32\NOTEPAD.EXE" "%1"
 # Enable and configure Windows Defender and advanced settings
 #######################################################################
 
-
-:: https://docs.microsoft.com/en-us/windows/client-management/mdm/policy-csp-defender#defender-submitsamplesconsent
-:: https://docs.microsoft.com/en-us/powershell/module/defender/set-mppreference?view=win10-ps
 ::
 :: Start Defender Service
 sc start WinDefend
@@ -113,7 +193,7 @@ powershell.exe Disable-WindowsOptionalFeature -Online -FeatureName MicrosoftWind
 powershell.exe Disable-WindowsOptionalFeature -Online -FeatureName MicrosoftWindowsPowerShellV2Root -norestart
 ::
 :: Prioritize ECC Curves with longer keys
-::reg add "HKLM\SOFTWARE\Policies\Microsoft\Cryptography\Configuration\SSL\00010002" /v EccCurves /t REG_MULTI_SZ /d NistP384,NistP256 /f
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Cryptography\Configuration\SSL\00010002" /v EccCurves /t REG_MULTI_SZ /d NistP384,NistP256 /f
 :: Prevent Kerberos from using DES or RC4
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\Kerberos\Parameters" /v SupportedEncryptionTypes /t REG_DWORD /d 2147483640 /f
 :: Encrypt and sign outgoing secure channel traffic when possible
@@ -205,7 +285,7 @@ netsh advfirewall set currentprofile logging maxfilesize 4096
 netsh advfirewall set currentprofile logging droppedconnections enable
 ::
 :: Block all inbound connections on Public profile
-:: netsh advfirewall set publicprofile firewallpolicy blockinboundalways,allowoutbound
+netsh advfirewall set publicprofile firewallpolicy blockinboundalways,allowoutbound
 :: Enable Windows Defender Network Protection
 powershell.exe Set-MpPreference -EnableNetworkProtection Enabled
 ::
@@ -245,7 +325,7 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging"
 ::
 :: Enable Windows Event Detailed Logging
 :: This is intentionally meant to be a subset of expected enterprise logging as this script may be used on consumer devices.
-:: For more extensive Windows logging, I recommend https://www.malwarearchaeology.com/cheat-sheets
+
 Auditpol /set /subcategory:"Security Group Management" /success:enable /failure:enable
 Auditpol /set /subcategory:"Process Creation" /success:enable /failure:enable
 Auditpol /set /subcategory:"Logoff" /success:enable /failure:disable
@@ -265,69 +345,45 @@ Auditpol /set /subcategory:"System Integrity" /success:enable /failure:enable
 ::#######################################################################
 ::
 :: Enforce NTLMv2 and LM authentication
-:: This is commented out by default as it could impact access to consumer-grade file shares but it's a recommended setting
-:: reg add "HKLM\SYSTEM\CurrentControlSet\Control\Lsa" /v LmCompatibilityLevel /t REG_DWORD /d 5 /f
+:: This is commented out by default as it could impact access to consumer-grade file shares but its a recommended setting
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Lsa" /v LmCompatibilityLevel /t REG_DWORD /d 5 /f
 ::
 :: Prevent unencrypted passwords being sent to third-party SMB servers
-:: This is commented out by default as it could impact access to consumer-grade file shares but it's a recommended setting
-:: reg add "HKLM\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters" /v EnablePlainTextPassword /t REG_DWORD /d 0 /f
+:: This is commented out by default as it could impact access to consumer-grade file shares but its a recommended setting
+reg add "HKLM\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters" /v EnablePlainTextPassword /t REG_DWORD /d 0 /f
 ::
 :: Prevent guest logons to SMB servers
-:: This is commented out by default as it could impact access to consumer-grade file shares but it's a recommended setting
-:: reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\LanmanWorkstation" /v AllowInsecureGuestAuth /t REG_DWORD /d 0 /f
+:: This is commented out by default as it could impact access to consumer-grade file shares but its a recommended setting
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\LanmanWorkstation" /v AllowInsecureGuestAuth /t REG_DWORD /d 0 /f
 ::
 :: Force SMB server signing
-:: This is commented out by default as it could impact access to consumer-grade file shares but it's a recommended setting
-:: reg add "HKLM\SYSTEM\CurrentControlSet\Services\LanManServer\Parameters" /v RequireSecuritySignature /t REG_DWORD /d 1 /f
-::
-:: Enable Windows Defender Application Guard
-:: This setting is commented out as it enables subset of DC/CG which renders other virtualization products unsuable. Can be enabled if you don't use those
-:: powershell.exe Enable-WindowsOptionalFeature -online -FeatureName Windows-Defender-ApplicationGuard -norestart
-::
-:: Enable Windows Defender Credential Guard
-:: This setting is commented out as it enables subset of DC/CG which renders other virtualization products unsuable. Can be enabled if you don't use those
-:: reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DeviceGuard" /v EnableVirtualizationBasedSecurity /t REG_DWORD /d 1 /f
-:: reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DeviceGuard" /v RequirePlatformSecurityFeatures /t REG_DWORD /d 3 /f
-:: reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DeviceGuard" /v LsaCfgFlags /t REG_DWORD /d 1 /f
-::
-:: The following variant also enables forced ASLR and CFG but causes issues with several third party apps
-:: powershell.exe Set-Processmitigation -System -Enable DEP,CFG,ForceRelocateImages,BottomUp,SEHOP
-::
-:: Block executable files from running unless they meet a prevalence, age, or trusted list criterion
-:: This one is commented out for now as I need to research and test more to determine potential impact
-:: powershell.exe Add-MpPreference -AttackSurfaceReductionRules_Ids 01443614-cd74-433a-b99e-2ecdc07bfc25 -AttackSurfaceReductionRules_Actions Enabled
-::
-:: Enable Windows Defender real time monitoring
-:: Commented out given consumers often run third party anti-virus. You can run either. 
-:: powershell.exe -command "Set-MpPreference -DisableRealtimeMonitoring $false"
-:: reg add "HKLM\SOFTWARE\Microsoft\Windows Defender\Real-Time Protection" /v DisableRealtimeMonitoring /t REG_DWORD /d 0 /f
-::
+:: This is commented out by default as it could impact access to consumer-grade file shares but its a recommended setting
+reg add "HKLM\SYSTEM\CurrentControlSet\Services\LanManServer\Parameters" /v RequireSecuritySignature /t REG_DWORD /d 1 /f
+
+
 :: Disable internet connection sharing
-:: Commented out as it's not enabled by default and if it is enabled, may be for a reason
-:: reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Network Connections" /v NC_ShowSharedAccessUI /t REG_DWORD /d 0 /f
+:: Commented out as its not enabled by default and if it is enabled, may be for a reason
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Network Connections" /v NC_ShowSharedAccessUI /t REG_DWORD /d 0 /f
 ::
 :: Always re-process Group Policy even if no changes
-:: Commented out as consumers don't typically use GPO
-:: reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Group Policy\{35378EAC-683F-11D2-A89A-00C04FBBCFA2}" /v NoGPOListChanges /t REG_DWORD /d 0 /f
+:: Commented out as consumers dont typically use GPO
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Group Policy\{35378EAC-683F-11D2-A89A-00C04FBBCFA2}" /v NoGPOListChanges /t REG_DWORD /d 0 /f
 ::
-:: Force logoff if smart card removed
-:: Set to "2" for logoff, set to "1" for lock
-:: Commented out as consumers don't typically use smart cards
-:: reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v SCRemoveOption /t REG_DWORD /d 2 /f
 ::
 :: Restrict privileged local admin tokens being used from network 
 :: Commented out as it only works on domain-joined assets
-:: reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v LocalAccountTokenFilterPolicy /t REG_DWORD /d 0 /f
+reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v LocalAccountTokenFilterPolicy /t REG_DWORD /d 0 /f
 ::
 :: Ensure outgoing secure channel traffic is encrytped
 :: Commented out as it only works on domain-joined assets
-:: reg add "HKLM\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters" /v RequireSignOrSeal /t REG_DWORD /d 1 /f
+reg add "HKLM\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters" /v RequireSignOrSeal /t REG_DWORD /d 1 /f
 ::
 :: Enforce LDAP client signing
 :: Commented out as most consumers dont use LDAP auth
-  reg add "HKLM\SYSTEM\CurrentControlSet\Services\LDAP" /v LDAPClientIntegrity /t REG_DWORD /d 1 /f
+reg add "HKLM\SYSTEM\CurrentControlSet\Services\LDAP" /v LDAPClientIntegrity /t REG_DWORD /d 1 /f
 ::
 :: Prevent unauthenticated RPC connections
-:: reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Rpc" /v RestrictRemoteClients /t REG_DWORD /d 1 /f
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Rpc" /v RestrictRemoteClients /t REG_DWORD /d 1 /f
 ::
 
+Write-Host "Hardening complete. Some changes may require restart or GPO refresh." -ForegroundColor Green

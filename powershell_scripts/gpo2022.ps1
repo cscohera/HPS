@@ -40,9 +40,6 @@ Write-Host "Disabled Windows Script Host"
 # =============== DISABLE POWERSHELL V2 (Legacy) ===============
 Disable-WindowsOptionalFeature -Online -FeatureName "MicrosoftWindowsPowerShellV2Root" -NoRestart
 
-# =============== SET POWERSHELL EXECUTION POLICY ===============
-Set-ExecutionPolicy -ExecutionPolicy AllSigned -Scope Users -Force
-Write-Host "Set PowerShell execution policy to AllSigned"
 
 # =============== ENABLE AUDIT POLICIES FOR PERSISTENCE ===============
 auditpol /set /subcategory:"Process Creation" /success:enable /failure:enable
