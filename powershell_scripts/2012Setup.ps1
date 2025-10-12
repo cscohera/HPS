@@ -22,10 +22,9 @@ Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanWorkstatio
 Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Control\Lsa -Name LmCompatibilityLevel -Value 5
 
 
-choco install git.install -y
 choco install sysinternals -y --params "/InstallDir:C:\Windows\System32\Sysprep\Panther\SSD"
 choco install python3 -y
-choco install everything -y --params "/InstallDir:C:\Windows\System32\Sysprep\Panther\SSD /run-on-system-startup"
+choco install everything -y --params "/run-on-system-startup"
 choco install systeminformer -y "/InstallDir:C:\Windows\System32\Sysprep\Panther\SSD"
 
 
