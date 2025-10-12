@@ -1,11 +1,12 @@
-#!/bin/bash
-#Thrown together by Ardian Peach (oatzs) for the Fall 2023 KnightHacksHorse Plinko Cyber Challenge at the University of Central Florida
-passwd -l root
+
+
+
+
 
 echo "PermitRootLogin no" >> /etc/ssh/sshd_config
 echo "Protocol 2" >> /etc/ssh/sshd_config
 #SSH whitelist
-echo "AllowUsers hkeating ubuntu" >> /etc/ssh/sshd_confi
+echo "AllowUsers jmoney debian" >> /etc/ssh/sshd_config
 
 apt install ufw -y
 #metasploit default port
@@ -37,7 +38,7 @@ cp /files/Seabiscuit.jpg /var
 chattr +i /files/Seabiscuit.jpg
 
 #allow only the scoring user
-echo "hkeating" >> /etc/vsftpd.userlist
+echo "jmoney" >> /etc/vsftpd.userlist
 echo "userlist_enable=YES" >> /etc/vsftpd.userlist
 echo "userlist_file=/etc/vsftpd.userlist" >> /etc/vsftpd.conf
 echo "userlist_deny=NO" >> /etc/vsftpd.conf
@@ -64,13 +65,6 @@ apt install whowatch -y
 wget https://github.com/DominicBreuker/pspy/releases/download/v1.2.1/pspy64
 chmod +x pspy64
 
-for user in $( sed 's/:.*//' /etc/passwd);
-	do
-	  if [[ $( id -u $user) -ge 999 && "$user" != "nobody" ]]
-	  then
-		(echo "PASSWORD!"; echo "PASSWORD!") |  passwd "$user"
-	  fi
-done
 
 pwck
 
