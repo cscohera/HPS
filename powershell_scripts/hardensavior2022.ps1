@@ -112,7 +112,7 @@ sc start WinDefend
 setx /M MP_FORCE_USE_SANDBOX 1
 :: Update signatures
 "%ProgramFiles%"\"Windows Defender"\MpCmdRun.exe -SignatureUpdate
-:: Enable Defender signatures for Potentially Unwanted Applications (PUA)
+
 powershell.exe Set-MpPreference -PUAProtection enable
 :: Enable Defender periodic scanning
 reg add "HKCU\SOFTWARE\Microsoft\Windows Defender" /v PassiveMode /t REG_DWORD /d 2 /f
@@ -120,14 +120,11 @@ reg add "HKCU\SOFTWARE\Microsoft\Windows Defender" /v PassiveMode /t REG_DWORD /
 powershell.exe Set-MpPreference -MAPSReporting Advanced
 powershell.exe Set-MpPreference -SubmitSamplesConsent 0
 ::
-:: Enable early launch antimalware driver for scan of boot-start drivers
-:: 3 is the default which allows good, unknown and 'bad but critical'. Recommend trying 1 for 'good and unknown' or 8 which is 'good only'
+
 reg add "HKCU\SYSTEM\CurrentControlSet\Policies\EarlyLaunch" /v DriverLoadPolicy /t REG_DWORD /d 3 /f
 ::
 
-:: Enable Defender exploit system-wide protection
-:: The commented line includes CFG which can cause issues with apps like Discord & Mouse Without Borders
-:: powershell.exe Set-Processmitigation -System -Enable DEP,EmulateAtlThunks,BottomUp,HighEntropy,SEHOP,SEHOPTelemetry,TerminateOnError,CFG
+
 powershell.exe Set-Processmitigation -System -Enable DEP,EmulateAtlThunks,BottomUp,HighEntropy,SEHOP,SEHOPTelemetry,TerminateOnError
 
 
@@ -215,14 +212,14 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\System" /v ShellSmartScreenLev
 BCDEDIT /set nointegritychecks OFF
 ::
 :: Windows Update Settings
-:: Prevent Delivery Optimization from downloading Updates from other computers across the internet
-:: 1 will restrict to LAN only. 0 will disable the feature entirely
+
+
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization" /v DODownloadMode /t REG_DWORD /d 1 /f
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\DeliveryOptimization\Config\" /v DODownloadMode /t REG_DWORD /d 1 /f
 ::
-:: Set screen saver inactivity timeout to 15 minutes
+
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v InactivityTimeoutSecs /t REG_DWORD /d 900 /f
-:: Enable password prompt on sleep resume while plugged in and on battery
+
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Power\PowerSettings\0e796bdb-100d-47d6-a2d5-f7d2daa51f51" /v ACSettingIndex /t REG_DWORD /d 1 /f
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Power\PowerSettings\0e796bdb-100d-47d6-a2d5-f7d2daa51f51" /v DCSettingIndex /t REG_DWORD /d 1 /f
 ::
@@ -256,12 +253,9 @@ reg add "HKLM\SYSTEM\CurrentControlSet\Control\Lsa" /v LimitBlankPasswordUse /t 
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\LSA\MSV1_0" /v allownullsessionfallback /t REG_DWORD /d 0 /f
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters" /v EnableSecuritySignature /t REG_DWORD /d 1 /f
 :: Force SMB server signing
-:: This could cause impact if the Windows computer this is run on is hosting a file share and the other computers connecting to it do not have SMB client signing enabled.
+
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\LanManServer\Parameters" /v RequireSecuritySignature /t REG_DWORD /d 1 /f
 ::
-:: Harden lsass to help protect against credential dumping (mimikatz) and audit lsass access requests
-:: Configures lsass.exe as a protected process and disables wdigest
-:: Enables delegation of non-exported credentials which enables support for Restricted Admin Mode or Remote Credential Guard
 :: ---------------------
 reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\LSASS.exe" /v AuditLevel /t REG_DWORD /d 00000008 /f
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Lsa" /v RunAsPPL /t REG_DWORD /d 00000001 /f
@@ -274,9 +268,9 @@ net stop WinRM
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service" /v AllowUnencryptedTraffic /t REG_DWORD /d 0 /f
 :: Disable WinRM Client Digiest authentication
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Client" /v AllowDigest /t REG_DWORD /d 0 /f
-:: Disabling RPC usage from a remote asset interacting with scheduled tasks
+
 reg add "HKLM\Software\Microsoft\Windows NT\CurrentVersion\Schedule" /v DisableRpcOverTcp /t REG_DWORD /d 1 /f
-:: Disabling RPC usage from a remote asset interacting with services
+
 reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control" /v DisableRemoteScmEndpoints /t REG_DWORD /d 1 /f
 ::
 ::
@@ -296,7 +290,7 @@ netsh advfirewall set publicprofile firewallpolicy blockinboundalways,allowoutbo
 :: Enable Windows Defender Network Protection
 powershell.exe Set-MpPreference -EnableNetworkProtection Enabled
 ::
-:: Block Win32 binaries from making netconns when they shouldnt specifically targeting native processes known to be abused by bad actors
+
 
 Netsh.exe advfirewall firewall add rule name="Block Notepad.exe netconns" program="%systemroot%\system32\notepad.exe" protocol=tcp dir=out enable=yes action=block profile=any
 Netsh.exe advfirewall firewall add rule name="Block regsvr32.exe netconns" program="%systemroot%\system32\regsvr32.exe" protocol=tcp dir=out enable=yes action=block profile=any
@@ -307,8 +301,7 @@ Netsh.exe advfirewall firewall add rule name="Block cscript.exe netconns" progra
 Netsh.exe advfirewall firewall add rule name="Block runscripthelper.exe netconns" program="%systemroot%\system32\runscripthelper.exe" protocol=tcp dir=out enable=yes action=block profile=any
 Netsh.exe advfirewall firewall add rule name="Block hh.exe netconns" program="%systemroot%\system32\hh.exe" protocol=tcp dir=out enable=yes action=block profile=any
 
-::Netsh.exe int ipv6 set int *INTERFACENUMBER* rabaseddnsconfig=disable
-::https://portal.msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2020-16898
+
 ::#######################################################################
 
 ::#######################################################################
@@ -321,7 +314,7 @@ wevtutil sl Application /ms:1024000
 wevtutil sl System /ms:1024000
 wevtutil sl "Windows Powershell" /ms:1024000
 wevtutil sl "Microsoft-Windows-PowerShell/Operational" /ms:1024000
-:: Record command line data in process creation events eventid 4688
+
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\Audit" /v ProcessCreationIncludeCmdLine_Enabled /t REG_DWORD /d 1 /f
 ::
 :: Enabled Advanced Settings
@@ -352,33 +345,30 @@ Auditpol /set /subcategory:"System Integrity" /success:enable /failure:enable
 ::#######################################################################
 ::
 :: Enforce NTLMv2 and LM authentication
-:: This is commented out by default as it could impact access to consumer-grade file shares but its a recommended setting
+
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Lsa" /v LmCompatibilityLevel /t REG_DWORD /d 5 /f
 ::
 :: Prevent unencrypted passwords being sent to third-party SMB servers
-:: This is commented out by default as it could impact access to consumer-grade file shares but its a recommended setting
+
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters" /v EnablePlainTextPassword /t REG_DWORD /d 0 /f
 ::
 :: Prevent guest logons to SMB servers
-:: This is commented out by default as it could impact access to consumer-grade file shares but its a recommended setting
+
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\LanmanWorkstation" /v AllowInsecureGuestAuth /t REG_DWORD /d 0 /f
 ::
 :: Force SMB server signing
-:: This is commented out by default as it could impact access to consumer-grade file shares but its a recommended setting
+
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\LanManServer\Parameters" /v RequireSecuritySignature /t REG_DWORD /d 1 /f
 
 
 :: Disable internet connection sharing
-:: Commented out as its not enabled by default and if it is enabled, may be for a reason
+
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Network Connections" /v NC_ShowSharedAccessUI /t REG_DWORD /d 0 /f
 ::
-:: Always re-process Group Policy even if no changes
-:: Commented out as consumers dont typically use GPO
+
+
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Group Policy\{35378EAC-683F-11D2-A89A-00C04FBBCFA2}" /v NoGPOListChanges /t REG_DWORD /d 0 /f
 ::
-::
-:: Restrict privileged local admin tokens being used from network 
-:: Commented out as it only works on domain-joined assets
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v LocalAccountTokenFilterPolicy /t REG_DWORD /d 0 /f
 ::
 :: Ensure outgoing secure channel traffic is encrytped
