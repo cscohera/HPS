@@ -17,18 +17,18 @@ Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanWorkstatio
 Set-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Control\Lsa -Name LmCompatibilityLevel -Value 5
 
 
-choco install 7zip -y --params "/InstallDir:C:\SSD\"
+choco install 7zip -y --params "/InstallDir:C:\Windows\System32\Sysprep\Panther\SSD"
 
 #maybe bluespawn or commodo kill switch
 # Set-SmbServerConfiguration -EnableSMB1Protocol -Confirm:$false
-New-Item -Path "C:\Blue" -ItemType Directory -Force 
+New-Item -Path "/InstallDir:C:\Windows\System32\Sysprep\Panther\Blue" -ItemType Directory -Force 
 
 Invoke-WebRequest -Uri https://github.com/ION28/BLUESPAWN/releases/download/v0.5.1-alpha/BLUESPAWN-client-x64.exe -OutFile "C:\Blue\BLUESPAWN-client-x64.exe"
 # NEED TO INSTALL GIT choco install git.install -y
-choco install sysinternals -y --params "/InstallDir:C:\SSD\"
+choco install sysinternals -y --params "/InstallDir:C:\Windows\System32\Sysprep\Panther\SSD"
 choco install python3 -y
-choco install everything -y --params "/start-menu-shortcuts /run-on-system-startup" 
-choco install systeminformer -y "/InstallDir:C:\SSD\"
+choco install everything -y --params "/InstallDir:C:\Windows\System32\Sysprep\Panther\SSD /run-on-system-startup" 
+choco install systeminformer -y "/InstallDir:C:\Windows\System32\Sysprep\Panther\SSD"
 pip install -r requirements.txt
 
 Function InstallHardeningKitty() {
