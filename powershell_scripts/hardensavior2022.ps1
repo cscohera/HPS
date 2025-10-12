@@ -9,9 +9,7 @@ reg export "HKLM\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters" C:\t
 
 net accounts /minpwlen:12 /maxpwage:60 /lockoutthreshold:5 /lockoutduration:30 /lockoutwindow:30 | Out-Null
 
-# =============== BLOCK STARTUP FOLDER EXECUTION ===============
-# Requires Software Restriction Policies or AppLocker
-# Note: SRP Example
+
 $srpPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers"
 New-Item -Path $srpPath -Force | Out-Null
 Set-ItemProperty -Path $srpPath -Name "Levels" -Value 262144
@@ -101,17 +99,9 @@ ftype jsefile="%SystemRoot%\system32\NOTEPAD.EXE" "%1"
 ftype vbefile="%SystemRoot%\system32\NOTEPAD.EXE" "%1"
 ftype vbsfile="%SystemRoot%\system32\NOTEPAD.EXE" "%1"
 
-#######################################################################
-# Enable and configure Windows Defender and advanced settings
-#######################################################################
-
-
-
 sc start WinDefend
 
 setx /M MP_FORCE_USE_SANDBOX 1
-
-
 
 powershell.exe Set-MpPreference -PUAProtection enable
 
@@ -154,9 +144,6 @@ reg add "HKCU\Software\Microsoft\Office\15.0\Word\Options\WordMail" /v DontUpdat
 reg add "HKCU\Software\Microsoft\Office\16.0\Word\Options" /v DontUpdateLinks /t REG_DWORD /d 00000001 /f
 reg add "HKCU\Software\Microsoft\Office\16.0\Word\Options\WordMail" /v DontUpdateLinks /t REG_DWORD /d 00000001 /f
 
-  #######################################################################
-  #Enable and Configure General Windows Security Settings
-  #######################################################################
 
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient" /v EnableMulticast /t REG_DWORD /d 0 /f
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient" /v DisableSmartNameResolution /t REG_DWORD /d 1 /f
@@ -246,9 +233,7 @@ reg add "HKLM\Software\Microsoft\Windows NT\CurrentVersion\Schedule" /v DisableR
 
 reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control" /v DisableRemoteScmEndpoints /t REG_DWORD /d 1 /f
 
-#######################################################################
-Enable and configure Windows Firewall
-#######################################################################
+
 
 NetSh Advfirewall set allprofiles state on
 
@@ -272,13 +257,7 @@ Netsh.exe advfirewall firewall add rule name="Block runscripthelper.exe netconns
 Netsh.exe advfirewall firewall add rule name="Block hh.exe netconns" program="%systemroot%\system32\hh.exe" protocol=tcp dir=out enable=yes action=block profile=any
 
 
-#######################################################################
 
-#######################################################################
-Enable Advanced Windows Logging
-#######################################################################
-
-Enlarge Windows Event Security Log Size
 wevtutil sl Security /ms:1024000
 wevtutil sl Application /ms:1024000
 wevtutil sl System /ms:1024000
@@ -287,9 +266,9 @@ wevtutil sl "Microsoft-Windows-PowerShell/Operational" /ms:1024000
 
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\Audit" /v ProcessCreationIncludeCmdLine_Enabled /t REG_DWORD /d 1 /f
 
-Enabled Advanced Settings
+
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Lsa" /v SCENoApplyLegacyAuditPolicy /t REG_DWORD /d 1 /f
-Enable PowerShell Logging
+
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ModuleLogging" /v EnableModuleLogging /t REG_DWORD /d 1 /f
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging" /v EnableScriptBlockLogging /t REG_DWORD /d 1 /f
 
